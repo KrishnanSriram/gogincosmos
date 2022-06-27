@@ -72,7 +72,7 @@ az keyvault create --location "east us" --name gogincosmoskv --resource-group go
 - Assign contributors to KV. Note: ID used below is the subscription ID
 
 ```
-az ad sp create-for-rbac --name "gogincosmossp" --role Contributor --scopes /subscriptions/b1a250e2-b191-45ee-adf8-40d1c9d99dbd
+az ad sp create-for-rbac --name "gogincosmossp" --role Contributor --scopes /subscriptions/<<SUBSCRIPTION-ID>>
 ```
 
 -- Finally, add permissions. ID used below is the app ID from above command
