@@ -32,16 +32,6 @@ Together with Gin, Golang is a force to reckon.
 
 <!-- GETTING STARTED -->
 
-## Getting Started
-
-Clone this sample. In the root directory, add .env file and set the following parameters
-
-```
-MONGODB_CONNECTION_STRING="mongodb://gogincosmos:sdfg==@gogincosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@gogincosmos@"
-MONGODB_DATABASE=products
-MONGODB_COLLECTION=apple_products
-```
-
 ### Prerequisites
 
 Install Golang. I used VSCode for development. There are a ton of other IDE's out there. Use the one that you are comfortable with.
@@ -54,7 +44,8 @@ Install Golang. I used VSCode for development. There are a ton of other IDE's ou
 
 1. Setup your Azure account, subscription before you get started
 2. Install Azure command CLI. Can be more than handy
-3. To create Azure CosmosDB from terminal, check the usage section
+3. Create Azure CosmosDB from terminal - check the usage section
+4. Create Azure Keyvault and enter vaules for DB connections
 
 <!-- USAGE EXAMPLES -->
 
@@ -71,6 +62,26 @@ az group create --name gogincosmosrg --location "eastus"
 ```
 az cosmosdb create --name gogincosmos --resource-group gogincosmosrg --kind MongoDB
 ```
+
+- Create Keyvault
+
+```
+az keyvault create --location "east us" --name gogincosmoskv --resource-group gogincosmosrg
+```
+
+- Assign contributors to KV. Note: ID used below is the subscription ID
+
+```
+az ad sp create-for-rbac --name "gogincosmossp" --role Contributor --scopes /subscriptions/b1a250e2-b191-45ee-adf8-40d1c9d99dbd
+```
+
+-- Finally, add permissions. ID used below is the app ID from above command
+
+```
+az keyvault set-policy --name gogincosmoskv --spn "e1ae22e5-2d33-4b22-a4e2-193665f0b352" --secret-permissions get list set delete
+```
+
+- Setup CosmosDB connection string, DB name and collection name in Azure KeyVault
 
 - Run code
 
