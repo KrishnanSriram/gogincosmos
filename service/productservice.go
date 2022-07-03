@@ -11,84 +11,86 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type ProductService struct {}
+type ProductService struct{}
 
 func init() {
-  log.Println("ProductService - Init")
+	log.Println("ProductService - Init")
 }
 
-func (service* ProductService)AddProduct(data model.ProductRequest) *model.ProductResponse {
-  product := data.ToProduct()
-  productCollection := config.GetMongoDBConfig().GetProductCollection()
-  ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-  defer cancel()
+func (service *ProductService) AddProduct(data model.ProductRequest) *model.ProductResponse {
+	product := data.ToProduct()
 
-  result, err := productCollection.InsertOne(ctx, product)
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-  if err != nil {
-    return &model.ProductResponse{ Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
-  }
+	result, err := productCollection.InsertOne(ctx, product)
 
-  return &model.ProductResponse{Data: result, Status: http.StatusOK, Message: "New product added successfully!"}
+	if err != nil {
+		return &model.ProductResponse{Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
+	}
+
+	return &model.ProductResponse{Data: result, Status: http.StatusOK, Message: "New product added successfully!"}
 }
 
-func (service *ProductService)ListProducts() *model.ProductResponse {
-  var products []model.Product
-  
-  productCollection := config.MongoDBConfig.GetProductCollection()
-  ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-  results, err := productCollection.Find(ctx, bson.M{})
-  defer cancel()
+func (service *ProductService) ListProducts() *model.ProductResponse {
+	var products []model.Product
 
-  if err != nil {
-    return &model.ProductResponse{ Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
-  }
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	results, err := productCollection.Find(ctx, bson.M{})
+	defer cancel()
 
-  //reading from the db in an optimal way
-  defer results.Close(ctx)
-  for results.Next(ctx) {
-    var product model.Product
-      if err = results.Decode(&product); err != nil {
-        return &model.ProductResponse{ Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
-      }
-    
-      products = append(products, product)
-  }
+	if err != nil {
+		return &model.ProductResponse{Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
+	}
 
-  productResponse:= model.ProductResponse{ Data: products, Status: http.StatusOK, Message: "Here's a list of all products in the store! Pagination is not available at the moment!"}  
-  return &productResponse
+	//reading from the db in an optimal way
+	defer results.Close(ctx)
+	for results.Next(ctx) {
+		var product model.Product
+		if err = results.Decode(&product); err != nil {
+			return &model.ProductResponse{Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
+		}
+
+		products = append(products, product)
+	}
+
+	productResponse := model.ProductResponse{Data: products, Status: http.StatusOK, Message: "Here's a list of all products in the store! Pagination is not available at the moment!"}
+	return &productResponse
 }
 
-func (service *ProductService)FindProduct(id string) *model.ProductResponse{
-  var product model.Product
-  productCollection := config.GetMongoDBConfig().GetProductCollection()
-  ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-  err := productCollection.FindOne(ctx, bson.M{"id": id}).Decode(&product)
-  defer cancel()
+func (service *ProductService) FindProduct(id string) *model.ProductResponse {
+	var product model.Product
 
-  if err != nil {
-    return &model.ProductResponse{ Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
-  }
-  if product == (model.Product{}) {
-    return &model.ProductResponse{ Data: nil, Status: http.StatusNotFound, Message: "Product you are looking for is not found. Try again later!" } 
-  }
-  //reading from the db in an optimal way
-  return &model.ProductResponse{ Data: product, Status: http.StatusOK, Message: "Found matching product" } 
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	err := productCollection.FindOne(ctx, bson.M{"id": id}).Decode(&product)
+	defer cancel()
+
+	if err != nil {
+		return &model.ProductResponse{Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
+	}
+	if product == (model.Product{}) {
+		return &model.ProductResponse{Data: nil, Status: http.StatusNotFound, Message: "Product you are looking for is not found. Try again later!"}
+	}
+	//reading from the db in an optimal way
+	return &model.ProductResponse{Data: product, Status: http.StatusOK, Message: "Found matching product"}
 }
 
-func (service *ProductService)RemoveProduct(id string) *model.ProductResponse{
-  productCollection := config.GetMongoDBConfig().GetProductCollection()
-  ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-  result, err := productCollection.DeleteOne(ctx, bson.M{"id": id})
-  defer cancel()
+func (service *ProductService) RemoveProduct(id string) *model.ProductResponse {
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	result, err := productCollection.DeleteOne(ctx, bson.M{"id": id})
+	defer cancel()
 
-  if err != nil {
-    return &model.ProductResponse{ Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
-  }
+	if err != nil {
+		return &model.ProductResponse{Data: err, Status: http.StatusInternalServerError, Message: "Failed to get product list!"}
+	}
 
-  if result.DeletedCount > 1 {
-    return &model.ProductResponse{ Data: nil, Status: http.StatusOK, Message: "Product found and removed from store!" } 
-  }
-  //reading from the db in an optimal way
-  return &model.ProductResponse{ Data: nil, Status: http.StatusNotFound, Message: "Product you are looking for is not found. Try again later!" } 
+	if result.DeletedCount > 1 {
+		return &model.ProductResponse{Data: nil, Status: http.StatusOK, Message: "Product found and removed from store!"}
+	}
+	//reading from the db in an optimal way
+	return &model.ProductResponse{Data: nil, Status: http.StatusNotFound, Message: "Product you are looking for is not found. Try again later!"}
 }

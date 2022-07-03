@@ -10,56 +10,47 @@ import (
 )
 
 type DBConfig struct {
-  db *mongo.Client
-  productCollection *mongo.Collection
+	ConnectionString string
+	Database         string
+	MongoClient      *mongo.Client
 }
 
-var MongoDBConfig *DBConfig
+func (dc *DBConfig) ConnectDB() (*mongo.Client, error) {
+	log.Println("Connect to DB", dc.ConnectionString)
+	client, err := mongo.NewClient(options.Client().ApplyURI(dc.ConnectionString))
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
-func (dbConfig *DBConfig)ConnectDB() error {
-  connection_string := getMongoURI()
-  log.Println("Connect to DB", connection_string)
-  client, err := mongo.NewClient(options.Client().ApplyURI(connection_string))
-  if err != nil {
-      log.Fatal(err)
-  }
-  ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-  err = client.Connect(ctx)
-  if err != nil {
-      log.Fatal(err)
-  }
+	//ping the database
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println("Connected to MongoDB")
 
-  //ping the database
-  err = client.Ping(ctx, nil)
-  if err != nil {
-      log.Fatal(err)
-  }
-  log.Println("Connected to MongoDB")
-  dbConfig.db = client
-  return nil 
+	return client, nil
 }
 
-func (dbConfig *DBConfig)GetDB() *mongo.Client {
-  return dbConfig.db
+func (dc *DBConfig) GetCollectionInDB(db *mongo.Client, db_name string, collection_name string) *mongo.Collection {
+	log.Println("DBConfig - GetProductCollection")
+	return db.Database(db_name).Collection(collection_name)
 }
 
-func (dbConfig *DBConfig)SetProductCollection() {
-  dbConfig.productCollection = dbConfig.db.Database(getMongoDB()).Collection("apple_products")
+func (dc *DBConfig) GetCollection(db *mongo.Client, collection_name string) *mongo.Collection {
+	return dc.GetCollectionInDB(db, dc.Database, collection_name)
 }
 
-func (dbConfig *DBConfig)GetProductCollection() *mongo.Collection {
-  log.Println("DBConfig - GetProductCollection")
-  if(dbConfig.productCollection == nil) {
-    dbConfig.SetProductCollection()
-  }
-  return dbConfig.productCollection
-}
-
-func NewDBConfig() error {
-  MongoDBConfig = &DBConfig{}
-  return MongoDBConfig.ConnectDB()
-}
-
-func GetMongoDBConfig() *DBConfig {
-  return MongoDBConfig
+func NewMongoDBConfig(envConfig EnvConfig) *DBConfig {
+	return &DBConfig{
+		ConnectionString: envConfig.GetParam("MONGODB_CONNECTIONSTRING"),
+		Database:         envConfig.GetParam("MONGO_DATABASE"),
+	}
 }
