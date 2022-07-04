@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/azuread"
       version = "2.25.0"
     }
+    random = {
+      source = "hashicorp/random"
+      version = "3.3.2"
+    }
   }
   required_version = ">= 0.14.9"
 }
@@ -98,20 +102,20 @@ resource "azuread_application" "auth" {
 
 # Manages a service principal associated with an application within Azure Active Directory.
 resource "azuread_service_principal" "auth" {
-  application_id = "${azuread_application.auth.application_id}"
+  application_id = azuread_application.auth.application_id
 }
 
 # Manages a password credential associated with a service principal within Azure Active Directory. 
 resource "azuread_service_principal_password" "auth" {
-  service_principal_id = "${azuread_service_principal.auth.id}"
+  service_principal_id = azuread_service_principal.auth.id
 }
 
 data "azurerm_subscription" "primary" {}
 
 resource "azurerm_role_assignment" "auth" {
-  scope                = "${data.azurerm_subscription.primary.id}"
+  scope                = data.azurerm_subscription.primary.id
   role_definition_name = "Contributor"
-  principal_id         = "${azuread_service_principal.auth.id}"
+  principal_id         = azuread_service_principal.auth.id
 }
 
 data "azurerm_client_config" "current" {}
