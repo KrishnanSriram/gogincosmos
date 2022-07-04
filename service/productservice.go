@@ -6,6 +6,7 @@ import (
 	"gogincosmos/model"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +21,7 @@ func init() {
 func (service *ProductService) AddProduct(data model.ProductRequest) *model.ProductResponse {
 	product := data.ToProduct()
 
-	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, os.Getenv("MONGO_COLLECTION"))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -36,7 +37,7 @@ func (service *ProductService) AddProduct(data model.ProductRequest) *model.Prod
 func (service *ProductService) ListProducts() *model.ProductResponse {
 	var products []model.Product
 
-	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, os.Getenv("MONGO_COLLECTION"))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	results, err := productCollection.Find(ctx, bson.M{})
 	defer cancel()
@@ -63,7 +64,7 @@ func (service *ProductService) ListProducts() *model.ProductResponse {
 func (service *ProductService) FindProduct(id string) *model.ProductResponse {
 	var product model.Product
 
-	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, os.Getenv("MONGO_COLLECTION"))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	err := productCollection.FindOne(ctx, bson.M{"id": id}).Decode(&product)
 	defer cancel()
@@ -79,7 +80,7 @@ func (service *ProductService) FindProduct(id string) *model.ProductResponse {
 }
 
 func (service *ProductService) RemoveProduct(id string) *model.ProductResponse {
-	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, "apple_products")
+	productCollection := config.AppConfig.DBConfig.GetCollection(config.AppConfig.DBConfig.MongoClient, os.Getenv("MONGO_COLLECTION"))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	result, err := productCollection.DeleteOne(ctx, bson.M{"id": id})
 	defer cancel()

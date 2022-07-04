@@ -50,6 +50,9 @@ Install Golang. I used VSCode for development. There are a ton of other IDE's ou
 <!-- USAGE EXAMPLES -->
 
 ## Usage
+Follow either of "Step by Step Guidelines" or "Using Terraform Scripts" steps for usage.
+
+### **Step by Step Guidelines**
 
 - Create ResourceGroup
 
@@ -75,7 +78,7 @@ az keyvault create --location "east us" --name gogincosmoskv --resource-group go
 az ad sp create-for-rbac --name "gogincosmossp" --role Contributor --scopes /subscriptions/<<SUBSCRIPTION-ID>>
 ```
 
--- Finally, add permissions. ID used below is the app ID from above command
+- Finally, add permissions. ID used below is the app ID from above command
 
 ```
 az keyvault set-policy --name gogincosmoskv --spn "e1ae22e5-2d33-4b22-a4e2-193665f0b352" --secret-permissions get list set delete
@@ -83,7 +86,35 @@ az keyvault set-policy --name gogincosmoskv --spn "e1ae22e5-2d33-4b22-a4e2-19366
 
 - Setup CosmosDB connection string, DB name and collection name in Azure KeyVault
 
-- Run code
+- Create .env file with below details
+
+```
+KEY_VAULT_NAME=<>
+AZURE_KEYVAULT_URL=<>
+AZURE_CLIENT_ID=<>
+AZURE_TENANT_ID=<>
+AZURE_CLIENT_SECRET=<>
+```
+### **Using Terraform Scripts**
+- Run terraform apply to create the infrastructure including service provider client, cosmos db and key vault.
+
+```
+make SUBSCRIPTION_ID=<subscription-id> tfapply
+```
+
+- Load environment file (.env)
+
+```
+make SUBSCRIPTION_ID=<subscription-id> loadenv
+```
+
+- Destroy the infrastructure.
+
+```
+make SUBSCRIPTION_ID=<subscription-id> tfdestroy
+```
+
+## Run code
 
 ```
 go run main.go
